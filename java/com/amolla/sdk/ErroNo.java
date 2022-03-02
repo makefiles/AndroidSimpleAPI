@@ -1,5 +1,14 @@
+/*
+ * Copyright (C) 2019 by J.J. (make.exe@gmail.com)
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ */
+
 package com.amolla.sdk;
 
+/**
+ * TODO: Enter the descriptions
+ * @since 1.0
+ */
 public enum ErroNo {
 
     SUCCESS(0),
@@ -18,15 +27,15 @@ public enum ErroNo {
     NO_SUCH_FIELD(-13),
     NO_SUCH_METHOD(-14),
     ILLEGAL_ARGUMENT(-15),
-    ILLEGAL_STATE(-17),
-    INDEX_OUT_OF_BOUND(-16),
-    NULL_POINTER(-17),
-    NOT_PROVISIONED(-18),
-    TOO_BUSY(-19),
-    ARGUMENT_OUT_OF_MEMORY(-20);
+    ILLEGAL_STATE(-16),
+    INDEX_OUT_OF_BOUND(-17),
+    NULL_POINTER(-18),
+    NOT_PROVISIONED(-19),
+    TOO_BUSY(-20),
+    ARGUMENT_OUT_OF_MEMORY(-21);
 
     private final int code;
-    private ErroNo(int code) { this.code = code * 2000; }
+    private ErroNo(int code) { this.code = check(code) ? code : code - 2000; }
     private static final class StringTable {
         public static final java.util.Map<ErroNo, String> descriptions = generateTable();
         public static final java.util.Map<ErroNo, String> generateTable() {
@@ -57,7 +66,7 @@ public enum ErroNo {
         }
     }
     public static final boolean check(int code) {
-        return code > ErroNo.FAILURE.code();
+        return code > -1;
     }
     public static final String toString(int code) {
         for (ErroNo value : ErroNo.values()) {
@@ -65,6 +74,7 @@ public enum ErroNo {
                 return value.toString();
             }
         }
+        return "";
     }
     public final String toString() { return StringTable.descriptions.get(this); }
     public final int code() { return this.code; }

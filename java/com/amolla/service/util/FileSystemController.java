@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2019 by J.J. (make.exe@gmail.com)
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ */
+
 package com.amolla.service.util;
 
 import com.amolla.sdk.Tube;
@@ -11,9 +16,14 @@ import android.util.Log;
 import android.util.Arrays;
 import android.provider.Settings;
 
+import java.nio.charset.StandardCharsets;
+import java.lang.Process;
+import java.util.Arrays;
 import java.io.IOException;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.InputStreamReader;
-import java.io.InputStreamWriter;
+import java.io.OutputStreamWriter;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileReader;
@@ -21,21 +31,18 @@ import java.io.FileWriter;
 import java.io.File;
 
 public class FileSystemController extends DynamicController {
+
+    private static final String TAG = FileSystemController.class.getSimpleName();
     private static final boolean DEBUG = DEBUG_ALL || false;
 
-    public FileSystemController(DynamicController ctrl, String tag) {
-        super(ctrl, tag);
-    }
-
+    public FileSystemController(DynamicController ctrl, String tag) { super(ctrl, tag); }
+    public static FileSystemController mInstance;
+    public static FileSystemController get() { return mInstance; }
     public static FileSystemController init(DynamicController ctrl) {
         if (mInstance == null) {
-            mInstance = new FileSystemController(ctrl, FileSystemController.class.getSimpleName());
+            mInstance = new FileSystemController(ctrl, TAG);
         }
         return get();
-    }
-
-    public static FileSystemController get() {
-        return (FileSystemController) mInstance;
     }
 
     public String getSetting(int which, String key) {
@@ -52,13 +59,13 @@ public class FileSystemController extends DynamicController {
         try {
             switch (which) {
                 case To.GLOBAL:
-                    Settings.Global.setString(getContentResolver(), key, value);
+                    Settings.Global.putString(getContentResolver(), key, value);
                     break;
                 case To.SECURE:
-                    Settings.Secure.setString(getContentResolver(), key, value);
+                    Settings.Secure.putString(getContentResolver(), key, value);
                     break;
                 case To.SYSTEM:
-                    Settings.System.setString(getContentResolver(), key, value);
+                    Settings.System.putString(getContentResolver(), key, value);
                     break;
                 default: return false;
             }
@@ -181,7 +188,7 @@ public class FileSystemController extends DynamicController {
         BufferedWriter bw = null;
         try {
             fw = new FileWriter(file);
-            bw = new BufferedWriter(fr, 1024);
+            bw = new BufferedWriter(fw, 1024);
             bw.write(buf);
         } catch (Exception e) {
             if (DEBUG) { e.printStackTrace(); }
@@ -200,15 +207,15 @@ public class FileSystemController extends DynamicController {
         try {
             if (DEBUG) Log.i(TAG, "Command : " + cmd);
             pc = new ProcessBuilder(cmd).start();
-            br = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            br = new BufferedReader(new InputStreamReader(pc.getInputStream()));
             String output = null;
-            while ((ouput = br.readLine()) != null) { Log.i(TAG, "Command Result : " + output); }
+            while ((output = br.readLine()) != null) { Log.i(TAG, "Command Result : " + output); }
         } catch (Exception e) {
             if (DEBUG) e.printStackTrace();
             return false;
         } finally {
             if (br != null) try { br.close(); } catch (IOException e) {}
-            if (pc != null) pc.waitFor();
+            if (pc != null) try { pc.waitFor(); } catch (InterruptedException e) {}
             Binder.restoreCallingIdentity(ident);
         }
         return true;

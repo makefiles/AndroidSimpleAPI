@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2019 by J.J. (make.exe@gmail.com)
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ */
+
 package com.amolla.sdk.util;
 
 import com.amolla.sdk.Tube;
@@ -37,7 +42,7 @@ public class SysFs {
         Bundle param = new Bundle();
         param.putInt(To.P0, which);
         param.putString(To.P1, key);
-        return getString("UTIL_FS_SYSTEM_SETTINGS", param);
+        return Tube.getString("UTIL_FS_SYSTEM_SETTINGS", param);
     }
 
     /**
@@ -55,7 +60,7 @@ public class SysFs {
         param.putInt(To.P0, which);
         param.putString(To.P1, key);
         param.putString(To.P2, value);
-        return ErroNo.check(setValue("UTIL_FS_SYSTEM_SETTINGS", param));
+        return ErroNo.check(Tube.setValue("UTIL_FS_SYSTEM_SETTINGS", param));
     }
 
     /**
@@ -71,7 +76,7 @@ public class SysFs {
         Bundle param = new Bundle();
         param.putString(To.P0, key);
         param.putString(To.P1, def);
-        return getString("UTIL_FS_SYSTEM_PROPERTY", param);
+        return Tube.getString("UTIL_FS_SYSTEM_PROPERTY", param);
     }
 
     /**
@@ -88,7 +93,7 @@ public class SysFs {
         Bundle param = new Bundle();
         param.putString(To.P0, key);
         param.putString(To.P1, value);
-        return ErroNo.check(setValue("UTIL_FS_SYSTEM_PROPERTY", param));
+        return ErroNo.check(Tube.setValue("UTIL_FS_SYSTEM_PROPERTY", param));
     }
 
     /**
@@ -102,7 +107,7 @@ public class SysFs {
         if (path == null || path.isEmpty()) return null;
         Bundle param = new Bundle();
         param.putString(To.P0, path);
-        return getByteArray("UTIL_FS_SYSTEM_BYTES", param);
+        return Tube.getByteArray("UTIL_FS_SYSTEM_BYTES", param);
     }
 
     /**
@@ -118,7 +123,7 @@ public class SysFs {
         Bundle param = new Bundle();
         param.putString(To.P0, path);
         param.putByteArray(To.P1, buf);
-        return ErroNo.check(setValue("UTIL_FS_SYSTEM_BYTES", param));
+        return ErroNo.check(Tube.setValue("UTIL_FS_SYSTEM_BYTES", param));
     }
 
     /**
@@ -132,7 +137,7 @@ public class SysFs {
         if (path == null || path.isEmpty()) return null;
         Bundle param = new Bundle();
         param.putString(To.P0, path);
-        return getString("UTIL_FS_SYSTEM_STRING", param);
+        return Tube.getString("UTIL_FS_SYSTEM_STRING", param);
     }
 
     /**
@@ -148,7 +153,7 @@ public class SysFs {
         Bundle param = new Bundle();
         param.putString(To.P0, path);
         param.putString(To.P1, buf);
-        return ErroNo.check(setValue("UTIL_FS_SYSTEM_BYTES", param));
+        return ErroNo.check(Tube.setValue("UTIL_FS_SYSTEM_STRING", param));
     }
 
     /**
@@ -161,6 +166,6 @@ public class SysFs {
     public boolean execute(String... args) {
         Bundle param = new Bundle();
         param.putStringArray(To.P0, args);
-        return ErroNo.check(doAction("UTIL_FS_EXECUTE", param));
+        return ErroNo.check(Tube.doAction("UTIL_FS_EXECUTE", param));
     }
 }

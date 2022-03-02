@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2019 by J.J. (make.exe@gmail.com)
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ */
+
 package com.amolla.sdk.info;
 
 import com.amolla.sdk.Tube;
@@ -174,6 +179,6 @@ public class DeviceInfo {
      * @since 1.0
      */
     public String getInfoToString(int what) {
-        return Tube.getString(getStringByIndex(what), null);
+        return Tube.getString(getStringOfIndex(what), null);
     }
 }

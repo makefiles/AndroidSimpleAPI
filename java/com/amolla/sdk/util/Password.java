@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2019 by J.J. (make.exe@gmail.com)
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ */
+
 package com.amolla.sdk.util;
 
 import com.amolla.sdk.Tube;
@@ -64,6 +69,7 @@ public class Password {
      */
     public boolean setCurrentUser(int user) {
         mCurrentUser = user;
+        return mCurrentUser == user;
     }
 
     /**
@@ -145,7 +151,7 @@ public class Password {
     public boolean setKey(String key, String password) {
         Bundle param = new Bundle();
         param.putString(To.P0, key);
-        param.putSTring(To.P1, password);
+        param.putString(To.P1, password);
         return ErroNo.check(Tube.setValue("UTIL_PW_KEY", param));
     }
 

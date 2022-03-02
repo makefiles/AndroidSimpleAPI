@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2019 by J.J. (make.exe@gmail.com)
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ */
+
 package com.amolla.sdk;
 
 import com.amolla.sdk.ITube;
@@ -7,7 +12,10 @@ import com.amolla.sdk.To;
 import android.text.TextUtils;
 import android.os.Bundle;
 import android.os.ServiceManager;
+import android.util.Log;
 import android.content.Context;
+
+import java.util.HashMap;
 
 /**
  * As an integrated API that is exposed to the outside, sub-SDKs use this API.
@@ -20,9 +28,9 @@ public class Tube {
     private static final String TAG = Tube.class.getSimpleName();
     private static final boolean DEBUG = true;
 
-    public static final STR_EXE_ACTION_PREFIX   = "EXE.ACTION.INTENT.";
-    public static final STR_SET_ACTION_PREFIX   = "SET.ACTION.INTENT.";
-    public static final STR_GET_ACTION_PREFIX   = "GET.ACTION.INTENT.";
+    public static final String STR_EXE_ACTION_PREFIX = "EXE.ACTION.INTENT.";
+    public static final String STR_SET_ACTION_PREFIX = "SET.ACTION.INTENT.";
+    public static final String STR_GET_ACTION_PREFIX = "GET.ACTION.INTENT.";
 
     public static final String STR_TOKEN = "::";
     public static final String STR_SERVICE_SUFFIX = STR_TOKEN + DEFAULT_SERVICE.class.getSimpleName();
@@ -36,9 +44,9 @@ public class Tube {
     }
 
     private static HashMap<String, ITube> mServices = new HashMap<String, ITube>();
-    private static ITube getService(String name) {
-        if (!name.isEmpty() && !mServices.contains(name)) {
-            ITube service = ITube.Stub.asInterface(ServiceManager.getService(serviceName));
+    public static ITube getService(String name) {
+        if (!name.isEmpty() && !mServices.containsKey(name)) {
+            ITube service = ITube.Stub.asInterface(ServiceManager.getService(name));
             if (service != null) {
                 if (DEBUG) { Log.d(TAG, "The service to import is " + name); }
                 mServices.put(name, service);
@@ -48,15 +56,14 @@ public class Tube {
     }
 
     private static String findName(String key) {
-        if (DEBUG) { log.d(TAG, "Find service name with " + key); }
         if (TextUtils.isEmpty(key)) {
             return "";
         }
-        for (DEFAULT_SERVICE service : DEFAULT_SERVICE.values() {
-            if (key.indexOf(service.name() == 0) return service.name() + STR_TOKEN + STR_SERVICE_SUFFIX;
+        for (DEFAULT_SERVICE service : DEFAULT_SERVICE.values()) {
+            if (key.indexOf(service.name()) == 0) return service.name() + STR_SERVICE_SUFFIX;
         }
-        for (RUNTIME_SERVICE service : RUNTIME_SERVICE.values() {
-            if (key.indexOf(service.name() == 0) return service.name();
+        for (RUNTIME_SERVICE service : RUNTIME_SERVICE.values()) {
+            if (key.indexOf(service.name()) == 0) return service.name();
         }
         return "STATIC_SERVER";
     }
@@ -150,7 +157,7 @@ public class Tube {
 
     public static byte getByte(String key, Bundle val) {
         Bundle result = getValue(key, val);
-        if (result == null) return null;
+        if (result == null) return -1;
         return result.getByte(To.R0);
     }
 

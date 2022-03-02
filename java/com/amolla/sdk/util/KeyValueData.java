@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2019 by J.J. (make.exe@gmail.com)
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ */
+
 package com.amolla.sdk.util;
 
 import com.amolla.sdk.Tube;
@@ -8,6 +13,8 @@ import android.app.ActivityManagerNative;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.UserHandle;
+
+import java.util.HashMap;
 
 /**
  * TODO: Enter the descriptions
@@ -72,6 +79,7 @@ public class KeyValueData {
      */
     public boolean setCurrentUser(int user) {
         mCurrentUser = user;
+        return mCurrentUser == user;
     }
 
     /**
@@ -97,7 +105,7 @@ public class KeyValueData {
         Bundle param = new Bundle();
         param.putInt(To.P0, getCurrentOrCallingUser());
         param.putString(To.P1, key);
-        return getString("UTIL_INI_DB_SINGLE_USER_DATA", param);
+        return Tube.getString("UTIL_INI_DB_SINGLE_USER_DATA", param);
     }
 
     /**
@@ -113,7 +121,7 @@ public class KeyValueData {
         param.putInt(To.P0, getCurrentOrCallingUser());
         param.putString(To.P1, key);
         param.putString(To.P2, value);
-        return ErroNo.check(setString("UTIL_INI_DB_SINGLE_USER_DATA", param));
+        return ErroNo.check(Tube.setValue("UTIL_INI_DB_SINGLE_USER_DATA", param));
     }
 
     /**
@@ -121,12 +129,12 @@ public class KeyValueData {
      * @return A result of the Map type. <code>null</code> value is an exception.
      * @since 1.0
      */
-    public Map<String, String> getKeyValues() {
+    public HashMap<String, String> getKeyValues() {
         Bundle param = new Bundle();
         param.putInt(To.P0, getCurrentOrCallingUser());
-        Bundle result = getValue("UTIL_INI_DB_MULTI_USER_DATA", param);
+        Bundle result = Tube.getValue("UTIL_INI_DB_MULTI_USER_DATA", param);
         if (result == null) return null;
-        return (Map<String, String>) result.getSerializable(To.R0);
+        return (HashMap<String, String>) result.getSerializable(To.R0);
     }
 
     /**
@@ -135,7 +143,7 @@ public class KeyValueData {
      * @return <code>true</code> if the setting call succeeds.
      * @since 1.0
      */
-    public boolean setKeyValues(Map<String, String> values) {
+    public boolean setKeyValues(HashMap<String, String> values) {
         if (values == null || values.isEmpty()) return false;
         Bundle param = new Bundle();
         param.putInt(To.P0, getCurrentOrCallingUser());

@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2019 by J.J. (make.exe@gmail.com)
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ */
+
 package com.amolla.sdk.util;
 
 import com.amolla.sdk.Tube;
@@ -7,7 +12,7 @@ import com.amolla.sdk.To;
 import android.os.Bundle;
 
 import java.io.File;
-import java.util.Map;
+import java.util.HashMap;
 
 /**
  * A tool that makes it easy to create and use INI files. (Initialization format file)
@@ -18,7 +23,7 @@ import java.util.Map;
 public class KeyValueFile {
 
     private String mAbsolutePath;
-    private Map<String, String> mKeyValues = null;
+    private HashMap<String, String> mKeyValues = null;
     private boolean update(boolean force) {
         if (force || mKeyValues == null) {
             if (mKeyValues != null && !mKeyValues.isEmpty()) {
@@ -26,9 +31,9 @@ public class KeyValueFile {
             }
             Bundle param = new Bundle();
             param.putString(To.P0, mAbsolutePath);
-            Bundle result = getValue("UTIL_INI_FILE_KEY_VALUES", param);
+            Bundle result = Tube.getValue("UTIL_INI_FILE_KEY_VALUES", param);
             if (result != null && !result.isEmpty()) {
-                mKeyValues = (Map<String, String>) result.getSerializable(To.R0);
+                mKeyValues = (HashMap<String, String>) result.getSerializable(To.R0);
                 return true;
             }
         }
@@ -88,7 +93,7 @@ public class KeyValueFile {
      * @return A result of the Map type. <code>null</code> value is an exception.
      * @since 1.0
      */
-    public Map<String, String> getKeyValues() {
+    public HashMap<String, String> getKeyValues() {
         update(false);
         return mKeyValues;
     }
@@ -99,7 +104,7 @@ public class KeyValueFile {
      * @return <code>true</code> if the setting call succeeds.
      * @since 1.0
      */
-    public boolean setKeyValues(Map<String, String> values) {
+    public boolean setKeyValues(HashMap<String, String> values) {
         Bundle param = new Bundle();
         param.putString(To.P0, mAbsolutePath);
         param.putSerializable(To.P1, values);

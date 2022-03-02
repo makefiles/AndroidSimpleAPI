@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2019 by J.J. (make.exe@gmail.com)
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ */
+
 package com.amolla.service.util;
 
 import com.amolla.sdk.ITube;
@@ -14,16 +19,18 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 
+import java.util.HashMap;
+
 public class UtilService extends ITube.Stub {
+
     private static final String TAG = UtilService.class.getSimpleName();
     private static final boolean DEBUG = DynamicController.DEBUG_ALL || false;
 
-    private static DynamicController mCtrl;
     private static enum UTIL_FS {
         UTIL_FS_SYSTEM_SETTINGS,
         UTIL_FS_SYSTEM_PROPERTY,
-        UTIL_FS_SYSFS_BYTES,
-        UTIL_FS_SYSFS_STRING,
+        UTIL_FS_SYSTEM_BYTES,
+        UTIL_FS_SYSTEM_STRING,
         UTIL_FS_EXECUTE
     }
     private static enum UTIL_INI {
@@ -33,24 +40,26 @@ public class UtilService extends ITube.Stub {
         UTIL_INI_DB_MULTI_USER_DATA
     }
 
+    private DynamicController mControl;
     public UtilService(Context context) {
-        mCtrl = new DynamicController(context, TAG);
-        mCtrl.setHandler(new Handler(mCtrl.getLooper()) {
+        mControl = new DynamicController(context, TAG);
+        mControl.setHandler(new Handler(mControl.getLooper()) {
             @Override
             public synchronized void handleMessage(Message msg) {
             }
         });
-        mCtrl.registerReceiver(new DynamicReceiver(this), DynamicReceiver.getFilter(UTIL_FS.class, UTIL_INI.class));
-        FileSystemController.init(mCtrl);
-        KeyValueController.init(mCtrl);
+        mControl.registerReceiver(new DynamicReceiver(this), DynamicReceiver.getFilter(UTIL_FS.class, UTIL_INI.class));
+        FileSystemController.init(mControl);
+        KeyValueController.init(mControl);
     }
 
     @Override
-    public synchronized int doAction(String key, Bundle val) {
+    public int doAction(String key, Bundle val) {
         int result = ErroNo.FAILURE.code();
 
         if (key == null || key.isEmpty()) {
             result = ErroNo.ILLEGAL_ARGUMENT.code();
+            if (DEBUG) Log.e(TAG, ErroNo.toString(result));
             return result;
         }
 
@@ -105,16 +114,18 @@ public class UtilService extends ITube.Stub {
             Log.e(TAG, "Not implemented doAction( " + key + " )");
         }
 
+        if (DEBUG) Log.d(TAG, key + " " + ErroNo.toString(result));
         return result;
     }
 
     @Override
-    public synchronized int setValue(String key, Bundle val) {
+    public int setValue(String key, Bundle val) {
         int result = ErroNo.FAILURE.code();
 
         if (key == null || key.isEmpty() ||
             val == null || val.isEmpty()) {
             result = ErroNo.ILLEGAL_ARGUMENT.code();
+            if (DEBUG) Log.e(TAG, ErroNo.toString(result));
             return result;
         }
 
@@ -151,7 +162,7 @@ public class UtilService extends ITube.Stub {
 
                 switch(UTIL_INI.valueOf(key)) {
                     case UTIL_INI_FILE_KEY_VALUES:
-                        if (KeyValueController.get().setKeyValues(val.getString(To.P0), val.getSerializable(To.P1))) {
+                        if (KeyValueController.get().setKeyValues(val.getString(To.P0), (HashMap<String, String>) val.getSerializable(To.P1))) {
                             result = ErroNo.SUCCESS.code();
                         }
                         break;
@@ -163,7 +174,7 @@ public class UtilService extends ITube.Stub {
                         }
                         break;
                     case UTIL_INI_DB_MULTI_USER_DATA:
-                        if (KeyValueController.get().setUserData(val.getInt(To.P0), val.getSerializable(To.P1))) {
+                        if (KeyValueController.get().setUserData(val.getInt(To.P0), (HashMap<String, String>) val.getSerializable(To.P1))) {
                             result = ErroNo.SUCCESS.code();
                         }
                         break;
@@ -176,15 +187,17 @@ public class UtilService extends ITube.Stub {
             Log.e(TAG, "Not implemented setValue( " + key + " )");
         }
 
+        if (DEBUG) Log.d(TAG, key + " " + ErroNo.toString(result));
         return result;
     }
 
     @Override
-    public synchronized Bundle getValue(String key, Bundle val) {
+    public Bundle getValue(String key, Bundle val) {
         Bundle result = new Bundle();
 
         if (key == null || key.isEmpty()) {
             result.putInt(To.R0, ErroNo.ILLEGAL_ARGUMENT.code());
+            if (DEBUG) Log.e(TAG, ErroNo.toString(result.getInt(To.R0)));
             return result;
         }
 
@@ -260,6 +273,7 @@ public class UtilService extends ITube.Stub {
             Log.e(TAG, "Not implemented getValue( " + key + " )");
         }
 
+        if (DEBUG) Log.d(TAG, key + " " + result);
         return result;
     }
 }

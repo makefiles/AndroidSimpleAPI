@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2019 by J.J. (make.exe@gmail.com)
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ */
+
 package com.amolla.server;
 
 import static com.amolla.sdk.Tube.STR_EXE_ACTION_PREFIX;
@@ -15,19 +20,22 @@ import android.content.BroadcastReceiver;
 import android.content.IntentFilter;
 import android.content.Context;
 import android.content.Intent;
+import android.os.ServiceManager;
 import android.os.SystemProperties;
 import android.os.Bundle;
 import android.os.RemoteException;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
+import android.os.Binder;
+import android.os.IBinder;
 import android.text.TextUtils;
 import android.provider.Settings;
 import android.util.Log;
 
 import dalvik.system.PathClassLoader;
 import java.lang.reflect.Method;
-import java.util.Map;
+import java.util.HashMap;
 
 public class StaticServer extends ITube.Stub {
     private static final String TAG = StaticServer.class.getSimpleName();
@@ -46,17 +54,17 @@ public class StaticServer extends ITube.Stub {
 
     private Context mContext;
     private HandlerThread mThread;
-    private InfoHandler mHandler;
+    private Handler mHandler;
 
     private String getPackagePath(String packageName) {
         try {
             ApplicationInfo ai = mContext.getPackageManager().getApplicationInfo(packageName, PackageManager.GET_META_DATA);
-            if (DEBUG) { Log.d(TAG, "Installed package path is " + ai.sourceDir);
+            if (DEBUG) { Log.d(TAG, "Installed package path is " + ai.sourceDir); };
             return (ai.sourceDir == null ? "" : ai.sourceDir);
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
         }
-        if (DEBUG) { Log.d(TAG, "Not installed package found");
+        if (DEBUG) { Log.d(TAG, "Not installed package found"); };
         return "";
     }
 
@@ -65,7 +73,12 @@ public class StaticServer extends ITube.Stub {
     }
 
     private boolean setInstalledSdkPath(String path) {
-        Settings.Global.getString(mContext.getContentResolver(), "INSTALLED_SDK_PATH", path);
+        long ident = Binder.clearCallingIdentity();
+        try {
+            Settings.Global.putString(mContext.getContentResolver(), "INSTALLED_SDK_PATH", path);
+        } finally {
+            Binder.restoreCallingIdentity(ident);
+        }
         return isInstalledSdkPath();
     }
 
@@ -95,9 +108,9 @@ public class StaticServer extends ITube.Stub {
 
     private boolean startServices(String path, Context context) {
         try {
-            if (DEBUG) { Log.d(TAG, "Load classes with " + path); }
+            if (DEBUG) { Log.d(TAG, "Load new classes with " + path); }
             PathClassLoader loader = new PathClassLoader(path, ClassLoader.getSystemClassLoader());
-            Method func = loader.loadClass("com.amolla.service.DynamicService").getDeclaredMethod("startAll", new Class[]{Map.class, Context.class});
+            Method func = loader.loadClass("com.amolla.service.DynamicService").getDeclaredMethod("startAll", new Class[]{HashMap.class, Context.class});
             func.invoke(getDefinition(), context);
             return true;
         } catch (Exception e) {
@@ -120,9 +133,7 @@ public class StaticServer extends ITube.Stub {
             @Override
             public synchronized void handleMessage(Message msg) {
                 switch (msg.what) {
-                    case 0:
-                        startServices();
-                        break;
+                    case 0: startServices(); break;
                 }
             }
         };
@@ -143,10 +154,10 @@ public class StaticServer extends ITube.Stub {
             final String packageName = intent.getData().getSchemeSpecificPart();
             final String action = intent.getAction();
             if (action.equals(Intent.ACTION_PACKAGE_ADDED) ||
-                action.euuals(Intent.ACTION_PACKAGE_REPLACED)) {
+                action.equals(Intent.ACTION_PACKAGE_REPLACED)) {
                 if (DEBUG) { Log.d(TAG, "Package added or replaced for " + packageName); }
                 setInstalledSdkPath(getPackagePath(packageName));
-            } else if (action.equals(Intent.ACTION_PACKAGE_REMOVED) {
+            } else if (action.equals(Intent.ACTION_PACKAGE_REMOVED)) {
                 if (DEBUG) { Log.d(TAG, "Package removed for " + packageName); }
                 setInstalledSdkPath("");
             }
@@ -173,12 +184,13 @@ public class StaticServer extends ITube.Stub {
                         intent.replaceExtras((Bundle) null);
                         if (intent.hasExtra(key)) {
                             Intent result = new Intent();
-                            result.putInt(To.R0, mStub.doAction(key, param));
+                            result.putExtra(To.R0, action);
+                            result.putExtra(To.R1, doAction(key, param));
                             IntentSender sender = (IntentSender) intent.getParcelableExtra(key);
                             try { sender.sendIntent(context, 0, result, null, null);
                             } catch (IntentSender.SendIntentException ignored) {}
                         } else {
-                            mStub.doAction(key, param);
+                            doAction(key, param);
                         }
                     } else if (action.indexOf(STR_SET_ACTION_PREFIX) == 0) {
                         String key = action.replaceFirst(STR_SET_ACTION_PREFIX, "");
@@ -186,12 +198,13 @@ public class StaticServer extends ITube.Stub {
                         intent.replaceExtras((Bundle) null);
                         if (intent.hasExtra(key)) {
                             Intent result = new Intent();
-                            result.putInt(To.R0, mStub.setValue(key, param));
+                            result.putExtra(To.R0, action);
+                            result.putExtra(To.R1, setValue(key, param));
                             IntentSender sender = (IntentSender) intent.getParcelableExtra(key);
                             try { sender.sendIntent(context, 0, result, null, null);
                             } catch (IntentSender.SendIntentException ignored) {}
                         } else {
-                            mStub.setValue(key, param);
+                            setValue(key, param);
                         }
                     } else if (action.indexOf(STR_GET_ACTION_PREFIX) == 0) {
                         String key = action.replaceFirst(STR_GET_ACTION_PREFIX, "");
@@ -199,7 +212,8 @@ public class StaticServer extends ITube.Stub {
                         intent.replaceExtras((Bundle) null);
                         if (intent.hasExtra(key)) {
                             Intent result = new Intent();
-                            result.putExtras(To.R0, mStub.getValue(key, param));
+                            result.putExtra(To.R0, action);
+                            result.putExtra(To.R1, getValue(key, param));
                             IntentSender sender = (IntentSender) intent.getParcelableExtra(key);
                             try { sender.sendIntent(context, 0, result, null, null);
                             } catch (IntentSender.SendIntentException ignored) {}
@@ -225,34 +239,41 @@ public class StaticServer extends ITube.Stub {
     }
 
     private void initSettings() {
-        setDefaultSetting(To.Global, "low_battery_warning_level",
+        setDefaultSetting(To.GLOBAL, "LOW_BATTERY_WARNING_LEVEL",
                 String.valueOf(mContext.getResources().getInteger(com.android.internal.R.integer.config_lowBatteryWarningLevel)));
-        setDefaultSetting(To.Global, "critical_battery_warning_level",
+        setDefaultSetting(To.GLOBAL, "CRITICAL_BATTERY_WARNING_LEVEL",
                 String.valueOf(mContext.getResources().getInteger(com.android.internal.R.integer.config_criticalBatteryWarningLevel)));
     }
 
     private boolean setDefaultSetting(int what, String key, String def) {
-        switch (what) {
-            case To.GLOBAL:
-                if (Settings.Global.getString(mContext.getContentResolver(), key) == null) {
-                    Settings.Global.setString(mContext.getContentResolver(), key, def);
-                    return true;
-                }
-                break;
-            case To.SECURE:
-                if (Settings.Secure.getString(mContext.getContentResolver(), key) == null) {
-                    Settings.Secure.setString(mContext.getContentResolver(), key, def);
-                    return true;
-                }
-                break;
-            case To.SYSTEM:
-                if (Settings.System.getString(mContext.getContentResolver(), key) == null) {
-                    Settings.System.setString(mContext.getContentResolver(), key, def);
-                    return true;
-                }
-                break;
+        long ident = Binder.clearCallingIdentity();
+        try {
+            switch (what) {
+                case To.GLOBAL:
+                    if (Settings.Global.getString(mContext.getContentResolver(), key) == null) {
+                        Settings.Global.putString(mContext.getContentResolver(), key, def);
+                        return true;
+                    }
+                    break;
+                case To.SECURE:
+                    if (Settings.Secure.getString(mContext.getContentResolver(), key) == null) {
+                        Settings.Secure.putString(mContext.getContentResolver(), key, def);
+                        return true;
+                    }
+                    break;
+                case To.SYSTEM:
+                    if (Settings.System.getString(mContext.getContentResolver(), key) == null) {
+                        Settings.System.putString(mContext.getContentResolver(), key, def);
+                        return true;
+                    }
+                    break;
+            }
+        } catch (Exception e) {
+            if (DEBUG) e.printStackTrace();
+        } finally {
+            Binder.restoreCallingIdentity(ident);
         }
-        return true;
+        return false;
     }
 
     private HashMap<String, String> getDefinition() {
@@ -267,17 +288,17 @@ public class StaticServer extends ITube.Stub {
     }
 
     @Override
-    public synchronized int doAction(String key, Bundle val) throws RemoteException {
+    public int doAction(String key, Bundle val) throws RemoteException {
         return ErroNo.UNSUPPORTED.code();
     }
 
     @Override
-    public synchronized int setValue(String key, Bundle val) throws RemoteException {
+    public int setValue(String key, Bundle val) throws RemoteException {
         return ErroNo.UNSUPPORTED.code();
     }
 
     @Override
-    public synchronized Bundle getValue(String key, Bundle val) throws RemoteException {
+    public Bundle getValue(String key, Bundle val) throws RemoteException {
         Bundle result = new Bundle();
         try {
             switch (STATIC_SERVER.valueOf(key)) {
@@ -292,7 +313,7 @@ public class StaticServer extends ITube.Stub {
                     result.putString(To.R0, getDefinition(val.getString(To.P0)));
                     break;
                 case STATIC_MODEL_NUMBER:
-                    String key = "DEF_BASE_MODEL_NUM";
+                    key = "DEF_BASE_MODEL_NUM";
                     if (val == null || !val.getBoolean(To.P0)) {
                         key = "DEF_MODEL_NUM";
                     }
@@ -300,12 +321,12 @@ public class StaticServer extends ITube.Stub {
                     break;
                 case STATIC_SUPPORTED:
                     if (val == null || val.isEmpty()) {
-                        result.setBoolean(To.R0, false);
+                        result.putBoolean(To.R0, false);
                         break;
                     }
                     String modelNumber = getDefinition("DEF_MODEL_NUM");
                     String supportList = getDefinition(val.getString(To.P0));
-                    result.setBoolean(To.R0, supportedList.contains(modelNumber));
+                    result.putBoolean(To.R0, supportList.contains(modelNumber));
                     break;
                 case STATIC_SERIAL_PORTS:
                     if (val == null || val.isEmpty()) {

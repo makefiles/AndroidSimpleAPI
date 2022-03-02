@@ -1,4 +1,12 @@
-package com.amolla.service;
+/*
+ * Copyright (C) 2019 by J.J. (make.exe@gmail.com)
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ */
+
+package com.amolla.server;
+
+import com.android.internal.R;
+import java.util.HashMap;
 
 public class StaticConst {
     public static final String BUILTIN_SDK_VERSION = "1.0.0"; /** Auto fill out. Do NOT change. **/
@@ -7,7 +15,6 @@ public class StaticConst {
 
     public static final HashMap<String, String> KERNEL_INTERFACE_MAP;
     static {
-        if (KERNEL_INTERFACE_MAP != null) return;
         KERNEL_INTERFACE_MAP = new HashMap<String, String>();
         try {
 
@@ -68,7 +75,7 @@ public class StaticConst {
             /* Check supported */
             KERNEL_INTERFACE_MAP.put("IS_DEFAULT_MODEL", join(",",BASIC));
             KERNEL_INTERFACE_MAP.put("IS_NOT_CHECK_KEYBOX", join(",",BASIC));
-            KERNEL_INTERFACE_MAP.put("IS_NOT_CHECK_BATT_CHARGING_IN_SYSFS", join(",",BASIC));
+            KERNEL_INTERFACE_MAP.put("IS_BATT_CHARGING_STATE_IN_SETTINGS", join(",",BASIC));
             KERNEL_INTERFACE_MAP.put("IS_SERIAL_FULL_LENGTH", join(",",BASIC));
             KERNEL_INTERFACE_MAP.put("IS_SUSPEND_NOTI_ENABLE", join(",",BASIC));
             KERNEL_INTERFACE_MAP.put("IS_NOT_WAKE_UART", join(",",BASIC));
@@ -87,5 +94,22 @@ public class StaticConst {
             sb.append(token);
         }
         return sb.toString();
+    }
+
+	public static String except(String array, String delimiter, String... tokens) {
+        if (array == null || array.length() == 0) return "";
+        for (String token : tokens) {
+            for (String piece : token.split(delimiter)) {
+                array = array.replace(piece, "");
+            }
+        }
+        array = array.replace(delimiter + delimiter, delimiter);
+        if (array.startsWith(delimiter)) {
+            array = array.substring(delimiter.length());
+        }
+        if (array.endsWith(delimiter)) {
+            array = array.substring(0, array.length() - delimiter.length());
+        }
+        return array;
     }
 }

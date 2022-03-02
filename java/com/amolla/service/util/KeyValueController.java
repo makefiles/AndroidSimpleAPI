@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2019 by J.J. (make.exe@gmail.com)
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ */
+
 package com.amolla.service.util;
 
 import com.amolla.sdk.Tube;
@@ -20,13 +25,14 @@ import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.File;
-import java.util.Map;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 
 public class KeyValueController extends DynamicController {
+
+    private static final String TAG = KeyValueController.class.getSimpleName();
     private static final boolean DEBUG = DEBUG_ALL || false;
 
-    private final DatabaseHelper mHelper;
+    private static DatabaseHelper mHelper;
     private static final String TABLE = "keyvalue";
     private static final String COLUMN_USER = "_user";
     private static final String COLUMN_KEY = "_key";
@@ -50,20 +56,15 @@ public class KeyValueController extends DynamicController {
         }
     }
 
-    public KeyValueController(DynamicController ctrl, String tag) {
-        super(ctrl, tag);
-    }
-
+    public KeyValueController(DynamicController ctrl, String tag) { super(ctrl, tag); }
+    public static KeyValueController mInstance;
+    public static KeyValueController get() { return mInstance; }
     public static KeyValueController init(DynamicController ctrl) {
         if (mInstance == null) {
-            mInstance = new KeyValueController(ctrl, KeyValueController.class.getSimpleName());
+            mInstance = new KeyValueController(ctrl, TAG);
             get().init();
         }
         return get();
-    }
-
-    public static KeyValueController get() {
-        return (KeyValueController) mInstance;
     }
 
     public boolean init() {
@@ -85,12 +86,14 @@ public class KeyValueController extends DynamicController {
     }
 
     public boolean clearUserData(int user) {
-        SQLiteDatabase db = mOpenHelper.getWritableDatabase();
+        SQLiteDatabase db = mHelper.getWritableDatabase();
         db.beginTransaction();
         try {
             db.delete(TABLE, COLUMN_USER + "='" + user + "'", null);
             db.setTransactionSuccessful();
             return true;
+        } catch (Exception e) {
+            if (DEBUG) e.printStackTrace();
         } finally {
             db.endTransaction();
         }
@@ -98,7 +101,7 @@ public class KeyValueController extends DynamicController {
     }
 
     public boolean setUserData(int user, String key, String value) {
-        if (key == null || key.isEmpty) {
+        if (key == null || key.isEmpty()) {
             Log.e(TAG, "Illegal arguemnt");
             return false;
         }
@@ -115,6 +118,8 @@ public class KeyValueController extends DynamicController {
             }
             db.setTransactionSuccessful();
             return true;
+        } catch (Exception e) {
+            if (DEBUG) e.printStackTrace();
         } finally {
             db.endTransaction();
         }
@@ -123,9 +128,9 @@ public class KeyValueController extends DynamicController {
 
     public String getUserData(int user, String key) {
         String result = null;
-        if (key == null || key.isEmpty) {
+        if (key == null || key.isEmpty()) {
             Log.e(TAG, "Illegal arguemnt");
-            return false;
+            return result;
         }
         Cursor cursor = mHelper.getReadableDatabase().query(TABLE, new String[] { COLUMN_VALUE },
                         COLUMN_KEY + "=? AND " + COLUMN_USER + "=?", new String[] { key, Integer.toString(user) },
@@ -139,14 +144,14 @@ public class KeyValueController extends DynamicController {
         return result;
     }
 
-    public LinkedHashMap<String, String> getUserData(int user) {
-        Map<String, String> keyValues = null;
+    public HashMap<String, String> getUserData(int user) {
+        HashMap<String, String> keyValues = null;
         Cursor cursor = mHelper.getReadableDatabase().query(TABLE, new String[] { COLUMN_KEY, COLUMN_VALUE },
                         COLUMN_USER + "=?", new String[] { Integer.toString(user) },
                         null, null, null);
         if (cursor != null) {
             if (cursor.moveToFirst()) {
-                keyValues = new LinkedHashMap<String, String>();
+                keyValues = new HashMap<String, String>();
 
                 while (!cursor.isAfterLast()) {
                     keyValues.put(cursor.getString(0), cursor.getString(0));
@@ -158,7 +163,7 @@ public class KeyValueController extends DynamicController {
         return keyValues;
     }
 
-    public boolean setUserData(int user, Map<String, String> keyValues) {
+    public boolean setUserData(int user, HashMap<String, String> keyValues) {
         if (keyValues == null || keyValues.isEmpty()) {
             Log.e(TAG, "Illegal arguemnt");
             return false;
@@ -166,7 +171,7 @@ public class KeyValueController extends DynamicController {
         SQLiteDatabase db = mHelper.getReadableDatabase();
         db.beginTransaction();
         try {
-            for (Map.Entry<String, String> entry : keyValues.entrySet()) {
+            for (HashMap.Entry<String, String> entry : keyValues.entrySet()) {
                 if (entry.getKey() == null) continue;
                 db.delete(TABLE, COLUMN_KEY + "=? AND " + COLUMN_USER + "=?", new String[] { entry.getKey(), Integer.toString(user) });
                 if (entry.getValue() != null) {
@@ -179,13 +184,15 @@ public class KeyValueController extends DynamicController {
             }
             db.setTransactionSuccessful();
             return true;
+        } catch (Exception e) {
+            if (DEBUG) e.printStackTrace();
         } finally {
             db.endTransaction();
         }
         return false;
     }
 
-    public LinkedHashMap<String, String> getKeyValues(String path) {
+    public HashMap<String, String> getKeyValues(String path) {
         if (path == null || path.isEmpty()) {
             Log.e(TAG, "Illegal arguemnt");
             return null;
@@ -195,7 +202,7 @@ public class KeyValueController extends DynamicController {
             Log.e(TAG, "File not found : " + path);
             return null;
         }
-        Map<String, String> keyValues = new LinkedHashMap<String, String>();
+        HashMap<String, String> keyValues = new HashMap<String, String>();
         FileReader fr = null;
         BufferedReader br = null;
         try {
@@ -239,10 +246,10 @@ public class KeyValueController extends DynamicController {
         return keyValues;
     }
 
-    public boolean setKeyValues(String path, Map<String, String> keyValues) {
+    public boolean setKeyValues(String path, HashMap<String, String> keyValues) {
         if (path == null || path.isEmpty()) {
             Log.e(TAG, "Illegal arguemnt");
-            return null;
+            return false;
         }
         if (keyValues == null || keyValues.isEmpty()) {
             Log.e(TAG, "Illegal arguemnt");
@@ -255,18 +262,16 @@ public class KeyValueController extends DynamicController {
         try {
             fw = new FileWriter(temp);
             bw = new BufferedWriter(fw);
-            for (Map.Entry<String, String> entry : keyValues.entrySet()) {
+            for (HashMap.Entry<String, String> entry : keyValues.entrySet()) {
                 bw.write(entry.getKey() + "=" + entry.getValue());
                 bw.newLine();
             }
             bw.write("END");
-            bw.flash();
+            bw.flush();
         } catch (Exception e) {
             if (DEBUG) { e.printStackTrace(); }
             return false;
         } finally {
-            if (br != null) try { br.close(); } catch (IOException e) {}
-            if (fr != null) try { fr.close(); } catch (IOException e) {}
             if (bw != null) try { bw.close(); } catch (IOException e) {}
             if (fw != null) try { fw.close(); } catch (IOException e) {}
             if (temp != null && temp.exists()) {

@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2019 by J.J. (make.exe@gmail.com)
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ */
+
 package com.amolla.service.info;
 
 import com.amolla.sdk.Tube;
@@ -9,16 +14,21 @@ import com.amolla.service.DynamicController;
 
 import android.net.wifi.WifiInfo;
 import android.net.DhcpInfo;
+import android.os.Bundle;
+import android.util.Log;
 import android.bluetooth.BluetoothAdapter;
+import android.provider.Settings;
 
 import java.net.NetworkInterface;
 import java.util.Collections;
 import java.util.List;
 
 public class ModuleInformation extends DynamicController {
+
+    private static final String TAG = ModuleInformation.class.getSimpleName();
     private static final boolean DEBUG = DEBUG_ALL || false;
 
-    private String[] mModuleNameArray = new String[InfoNative.MODULE_MAX];
+    private static String[] mModuleNameArray = new String[InfoNative.MODULE_END];
 
     private String mScannerClass;
     private String mTouchFirmwareVersion;
@@ -41,25 +51,20 @@ public class ModuleInformation extends DynamicController {
     private String mBackupBatteryPercentage;
     private String mBackupBatteryVoltage;
 
-    public ModuleInformation(DynamicController ctrl, String tag) {
-        super(ctrl, tag);
-    }
-
+    public ModuleInformation(DynamicController ctrl, String tag) { super(ctrl, tag); }
+    public static ModuleInformation mInstance;
+    public static ModuleInformation get() { return mInstance; }
     public static ModuleInformation init(DynamicController ctrl) {
         if (mInstance == null) {
-            mInstance = new ModuleInformation(ctrl, ModuleInformation.class.getSimpleName());
+            mInstance = new ModuleInformation(ctrl, TAG);
             get().updateAll();
         }
         return get();
     }
 
-    public static ModuleInformation get() {
-        return (ModuleInformation) mInstance;
-    }
-
     public static String getName(int index, boolean update) {
         if (mModuleNameArray[index] == null || update) {
-            mModuleNameArray[index] = InfoNative.getModelName(index);
+            mModuleNameArray[index] = InfoNative.getModuleName(index);
         }
         return mModuleNameArray[index];
     }
@@ -98,7 +103,7 @@ public class ModuleInformation extends DynamicController {
     private String readLine(String path, String def) {
         Bundle param = new Bundle();
         param.putString(To.P0, path);
-        String result = getString("UTIL_FS_SYSTEM_STRING", param);
+        String result = Tube.getString("UTIL_FS_SYSTEM_STRING", param);
         if (result == null) return def;
         return result;
     }
@@ -175,7 +180,7 @@ public class ModuleInformation extends DynamicController {
                     if (address == null || address.length != 6) {
                         throw new Exception();
                     }
-                    mWlanMacAddress = String.format("%02X:%02X:%02X:%02X:%02X:%02X", address[0], address[1], address[2], address[3], address[4], address[5])
+                    mWlanMacAddress = String.format("%02x:%02x:%02x:%02x:%02x:%02x", address[0], address[1], address[2], address[3], address[4], address[5]);
                 }
             } catch (Exception e) {
                 if (info != null) {
@@ -218,7 +223,7 @@ public class ModuleInformation extends DynamicController {
 
     public String getMainBatteryCharging(boolean update) {
         if (mMainBatteryCharging == null || update) {
-            if (Tube.check("STATIC_SUPPORTED", "IS_NOT_CHECK_BATT_CHARGING_IN_SYSFS")) {
+            if (Tube.check("STATIC_SUPPORTED", "IS_BATT_CHARGING_STATE_IN_SETTINGS")) {
                 mMainBatteryCharging = (Settings.Global.getInt(getContentResolver(), "USB_CHARGING_ENABLED", 1) == 1 ? "Enabled" : "Disabled");
             } else {
                 mMainBatteryCharging = (readLine(getDefinition("FS_MAIN_BATT_CHARGING")).equals("1") ? "Enabled" : "Disabled");
@@ -229,7 +234,7 @@ public class ModuleInformation extends DynamicController {
 
     public String getBackupBatteryCharging(boolean update) {
         if (mBackupBatteryCharging == null || update) {
-            if (Tube.check("STATIC_SUPPORTED", "IS_NOT_CHECK_BATT_CHARGING_IN_SYSFS")) {
+            if (Tube.check("STATIC_SUPPORTED", "IS_BATT_CHARGING_STATE_IN_SETTINGS")) {
                 mBackupBatteryCharging = (Settings.Global.getInt(getContentResolver(), "BACKUP_CHARGING_ENABLED", 1) == 1 ? "Enabled" : "Disabled");
             } else {
                 mBackupBatteryCharging = (readLine(getDefinition("FS_BACK_BATT_CHARGING")).equals("1") ? "Enabled" : "Disabled");
@@ -280,11 +285,11 @@ public class ModuleInformation extends DynamicController {
 
     public String getBackupBatteryVoltage(boolean update) {
         if (mBackupBatteryVoltage == null || update) {
-            String voltage = readLine(getDefinition("FS_BACK_BATT_VOLTAGE"));
+            String voltage = readLine(getDefinition("FS_BACK_BATT_VOLTAGE"), "0");
             try {
                 mBackupBatteryVoltage = String.valueOf(Integer.parseInt(voltage) / 1000);
             } catch (Exception e) {
-                mBackupBatteryVoltage = 0;
+                mBackupBatteryVoltage = "0";
             }
         }
         return mBackupBatteryVoltage;

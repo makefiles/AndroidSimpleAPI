@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2019 by J.J. (make.exe@gmail.com)
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ */
+
 package com.amolla.sdk.info;
 
 import com.amolla.sdk.Tube;
@@ -162,8 +167,8 @@ public class ModuleDetails {
         switch (what) {
             case INFO_MOD_SCANNER_CLASS:        return "INFO_MOD_SCANNER_CLASS";
             case INFO_MOD_TOUCH_FW_VER:         return "INFO_MOD_TOUCH_FW_VER";
-            case INFO_MOD_CAMERA_FW_VER:        return "INFO_MOD_1_CAMERA_FW_VER";
-            case INFO_MOD_CAMERA_FW_VER:        return "INFO_MOD_2_CAMERA_FW_VER";
+            case INFO_MOD_1_CAMERA_FW_VER:      return "INFO_MOD_1_CAMERA_FW_VER";
+            case INFO_MOD_2_CAMERA_FW_VER:      return "INFO_MOD_2_CAMERA_FW_VER";
             case INFO_MOD_BT_MAC_ADDR:          return "INFO_MOD_BT_MAC_ADDR";
             case INFO_MOD_WLAN_DRIVER_VER:      return "INFO_MOD_WLAN_DRIVER_VER";
             case INFO_MOD_WLAN_FW_VER:          return "INFO_MOD_WLAN_FW_VER";
@@ -172,8 +177,8 @@ public class ModuleDetails {
             case INFO_MOD_WLAN_IP_ADDR:         return "INFO_MOD_WLAN_IP_ADDR";
             case INFO_MOD_MAIN_BATT_STATE:      return "INFO_MOD_MAIN_BATT_STATE";
             case INFO_MOD_BACK_BATT_STATE:      return "INFO_MOD_BACK_BATT_STATE";
-            case INFO_MOD_MAIN_BATT_CHARGING:   return "INFO_MOD_MAIN_BATT_CHARGING:";
-            case INFO_MOD_BACK_BATT_CHARGING:   return "INFO_MOD_BACK_BATT_CHARGING:";
+            case INFO_MOD_MAIN_BATT_CHARGING:   return "INFO_MOD_MAIN_BATT_CHARGING";
+            case INFO_MOD_BACK_BATT_CHARGING:   return "INFO_MOD_BACK_BATT_CHARGING";
             case INFO_MOD_BATT_LOW_LEVEL:       return "INFO_MOD_BATT_LOW_LEVEL";
             case INFO_MOD_BATT_CRITICAL_LEVEL:  return "INFO_MOD_BATT_CRITICAL_LEVEL";
             case INFO_MOD_MAIN_BATT_CURRENT:    return "INFO_MOD_MAIN_BATT_CURRENT";
@@ -201,6 +206,6 @@ public class ModuleDetails {
      * @since 1.0
      */
     public String getInfoToString(int what) {
-        return Tube.getString(getStringByIndex(what), null);
+        return Tube.getString(getStringOfIndex(what), null);
     }
 }

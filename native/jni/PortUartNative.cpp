@@ -1,4 +1,10 @@
+/*
+ * Copyright (C) 2019 by J.J. (make.exe@gmail.com)
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ */
+
 #define LOG_TAG "com_amolla_jni_PortUartNative"
+#define PID      com_amolla_jni_PortUartNative
 
 #include <jni.h>
 #include <stdbool.h>
@@ -25,11 +31,11 @@ extern "C" {
 #define UNUSED(x) (void)(x)
 
 #ifdef SUPPORT_BLOCK_IO
-static int    gBlockIoExit = 0;
-static int[]  gBlockIoFd = {-1, -1};
+static int  gBlockIoExit = 0;
+static int  gBlockIoFd[] = {-1, -1};
 #endif
-static long[] gRequests = {-1, -1};
-static int checkRequests()
+static long gRequests[] = {-1, -1};
+static int  checkRequests()
 {
     const int len = sizeof(gRequests)/sizeof(gRequests[0]);
     for (int i = 0; i < len; i++) {
@@ -81,7 +87,7 @@ static int setUartSuspend (jint fd, jboolean sleep)
 	if (fd < 0) return -ENODEV;
     if (checkRequests() < 0) return -EBADR;
 	if (ioctl(fd, (sleep ? gRequests[1] : gRequests[0]), NULL) < 0) {
-		ALOGE("IOCTL_UART_CLOCK: %s (%d)", strerror(), errno);
+		ALOGE("IOCTL_UART_CLOCK: %s (%d)", strerror(-errno), -errno);
         return -errno;
     }
     return 0;
@@ -90,7 +96,7 @@ static int setUartSuspend (jint fd, jboolean sleep)
 jint JNI_OnLoad (JavaVM* jvm, void* reserved)
 {
     JNIEnv *env = NULL;
-    if ((*jvm)->GetEnv(jvm, (void**) &env, JNI_VERSION_1_6) != JNI_OK) {
+    if (jvm->GetEnv((void**) &env, JNI_VERSION_1_6) != JNI_OK) {
         return JNI_ERR;
     }
     return JNI_VERSION_1_6;
@@ -99,41 +105,41 @@ jint JNI_OnLoad (JavaVM* jvm, void* reserved)
 void JNI_OnUnload (JavaVM* jvm, void *reserved)
 {
     JNIEnv *env = NULL;
-    if ((*jvm)->GetEnv(jvm, (void**) &env, JNI_VERSION_1_6) != JNI_OK) {
+    if (jvm->GetEnv((void**) &env, JNI_VERSION_1_6) != JNI_OK) {
         return;
     }
 }
 
-JNI(jboolean, nativeRequests, LOG_TAG) (JNIEnv *env, jclass cls, jlongArray requests)
+JNI(jboolean, nativeRequests, PID) (JNIEnv *env, jclass cls, jlongArray requests)
 {
     const int len = sizeof(gRequests)/sizeof(gRequests[0]);
-    if ((*env)->GetArrayLength(env, requests) < len) return JNI_FALSE;
-    jlong *ptrArray = (*env)->GetLongArrayElements(env, requests, 0);
+    if (env->GetArrayLength(requests) < len) return JNI_FALSE;
+    jlong *ptrArray = env->GetLongArrayElements(requests, 0);
     for (int i = 0; i < len; i++) {
         if (ptrArray[i] < 0) {
-            (*env)->ReleaseLongArrayElements(env, requests, ptrArray, 0);
+            env->ReleaseLongArrayElements(requests, ptrArray, 0);
             return JNI_FALSE;
         }
         gRequests[i] = ptrArray[i];
     }
-    (*env)->ReleaseLongArrayElements(env, requests, ptrArray, 0);
+    env->ReleaseLongArrayElements(requests, ptrArray, 0);
     return JNI_TRUE;
 }
 
-JNI(jint, nativeOpen, LOG_TAG) (JNIEnv *env, jclass cls, jstring path, jint baudrate, jint flags, jboolean hwflow)
+JNI(jint, nativeOpen, PID) (JNIEnv *env, jclass cls, jstring path, jint baudrate, jint flags, jboolean hwflow)
 {
     /* Get baudrate */
     int speed = getUartBaudrate(baudrate);
     if (speed < 0) return -EINVAL;
     /* Open device */
-    const char * cstr = (*env)->GetStringUTFChars(env, path, 0);
+    const char * cstr = env->GetStringUTFChars(path, 0);
     int fd = open(cstr, O_RDWR | O_NOCTTY | flags);
-    (*env)->ReleaseStringUTFChars(env, path, cstr);
+    env->ReleaseStringUTFChars(path, cstr);
 	if (fd < 0) return -ENODEV;
     /* Configure device */
 	struct termios cfg;
     if (tcgetattr(fd, &cfg)) {
-		ALOGE("Failed to get the UART attribute: %s (%d)", strerror(), errno);
+		ALOGE("Failed to get the UART attribute: %s (%d)", strerror(-errno), -errno);
         close(fd);
         return -errno;
     }
@@ -146,14 +152,14 @@ JNI(jint, nativeOpen, LOG_TAG) (JNIEnv *env, jclass cls, jstring path, jint baud
 		cfg.c_cflag &= ~CRTSCTS;
 	}
 	if (tcsetattr(fd, TCSANOW, &cfg)) {
-		ALOGE("Failed to set the UART attribute: %s (%d)", strerror(), errno);
+		ALOGE("Failed to set the UART attribute: %s (%d)", strerror(-errno), -errno);
         close(fd);
         return -errno;
 	}
 #ifdef SUPPORT_BLOCK_IO
     /* Initialize for Block IO */
     if (pipe(gBlockIoFd) < 0) {
-		ALOGE("Failed to create pipes: %s (%d)", strerror(), errno);
+		ALOGE("Failed to create pipes: %s (%d)", strerror(-errno), -errno);
         close(fd);
         return -errno;
     }
@@ -164,7 +170,7 @@ JNI(jint, nativeOpen, LOG_TAG) (JNIEnv *env, jclass cls, jstring path, jint baud
     return fd;
 }
 
-JNI(jint, nativeClose, LOG_TAG) (JNIEnv *env, jclass cls, jint fd)
+JNI(jint, nativeClose, PID) (JNIEnv *env, jclass cls, jint fd)
 {
 	if (fd < 0) return -ENODEV;
 #ifdef SUPPORT_BLOCK_IO
@@ -184,7 +190,7 @@ JNI(jint, nativeClose, LOG_TAG) (JNIEnv *env, jclass cls, jint fd)
 	return 0;
 }
 
-JNI(jint, nativeRead, LOG_TAG) (JNIEnv *env, jclass cls, jint fd, jbyteArray buf, jint len)
+JNI(jint, nativeRead, PID) (JNIEnv *env, jclass cls, jint fd, jbyteArray buf, jint len)
 {
 	if (fd < 0) return -ENODEV;
     if (buf == NULL || len < 1) return -EINVAL;
@@ -210,35 +216,35 @@ JNI(jint, nativeRead, LOG_TAG) (JNIEnv *env, jclass cls, jint fd, jbyteArray buf
     int rc = read(fd, tmp, len);
 #endif
 	if (rc < 0) {
-		ALOGE("Failed to read from the UART: %s (%d)", strerror(), errno);
+		ALOGE("Failed to read from the UART: %s (%d)", strerror(-errno), -errno);
         return -errno;
 	}
-    (*env)->SetByteArrayRegion(env, buf, 0, len, (jbyte *) tmp);
+    env->SetByteArrayRegion(buf, 0, len, (jbyte *) tmp);
     return rc;
 }
 
-JNI(jint, nativeWrite, LOG_TAG) (JNIEnv *env, jclass cls, jint fd, jbyteArray buf, jint pos, jint len)
+JNI(jint, nativeWrite, PID) (JNIEnv *env, jclass cls, jint fd, jbyteArray buf, jint pos, jint len)
 {
 	if (fd < 0) return -ENODEV;
     if (buf == NULL || len < 1) return -EINVAL;
     char tmp[len];
-    (*env)->GetByteArrayRegion(env, buf, 0, len, (jbyte *) tmp);
+    env->GetByteArrayRegion(buf, 0, len, (jbyte *) tmp);
     int rc = write(fd, tmp, len - pos);
 	if (rc < 0) {
-		ALOGE("Failed to write to the UART: %s (%d)", strerror(), errno);
+		ALOGE("Failed to write to the UART: %s (%d)", strerror(-errno), -errno);
         return -errno;
 	}
     return 0;
 }
 
-JNI(jint, nativeSendBreak, LOG_TAG) (JNIEnv *env, jclass cls, jint fd)
+JNI(jint, nativeSendBreak, PID) (JNIEnv *env, jclass cls, jint fd)
 {
 	if (fd < 0) return -ENODEV;
     tcsendbreak(fd, 0);
 	return 0;
 }
 
-JNI(jint, nativeSleep, LOG_TAG) (JNIEnv *env, jclass cls, jint fd, jboolean enable)
+JNI(jint, nativeSleep, PID) (JNIEnv *env, jclass cls, jint fd, jboolean enable)
 {
     return setUartSuspend(fd, enable);
 }

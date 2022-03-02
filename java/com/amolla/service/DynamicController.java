@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2019 by J.J. (make.exe@gmail.com)
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ */
+
 package com.amolla.service;
 
 import com.amolla.sdk.To;
@@ -36,16 +41,14 @@ import android.hardware.usb.UsbManager;
 import android.hardware.input.InputManager;
 
 import java.util.HashMap;
-import java.util.Map;
 
 public class DynamicController {
     public static final boolean DEBUG_ALL = true;
     protected static String TAG = DynamicController.class.getSimpleName();
-    protected static DynamicController mInstance;
     protected Context mContext;
     protected Handler mHandler;
     protected HandlerThread mThread;
-    protected Map<String, String> mKernelInterfaceMap;
+    protected HashMap<String, String> mKernelInterfaceMap;
     public DynamicController(Context context, String tag) {
         mContext = context;
         getDefinedMap();
@@ -76,16 +79,16 @@ public class DynamicController {
         return mContext.registerReceiver(receiver, filter, null, mHandler);
     }
     public void unregisterReceiver(BroadcastReceiver receiver) {
-        if (mContext == null) return null;
+        if (mContext == null) return;
         mContext.unregisterReceiver(receiver);
     }
-    public Map<String, String> getDefinedMap() {
+    public HashMap<String, String> getDefinedMap() {
         if (mKernelInterfaceMap == null || mKernelInterfaceMap.isEmpty()) {
             try {
                 Bundle result = Tube.getValue("STATIC_DEFINED_CONSTANT_MAP", null);
                 mKernelInterfaceMap = (HashMap<String, String>) result.getSerializable(To.R0);
             } catch (Exception e) {
-                if (DEBUG) e.printStackTrace();
+                if (DEBUG_ALL) e.printStackTrace();
             }
         }
         return mKernelInterfaceMap;

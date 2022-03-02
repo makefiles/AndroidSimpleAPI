@@ -1,28 +1,39 @@
+/*
+ * Copyright (C) 2019 by J.J. (make.exe@gmail.com)
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ */
+
 package com.amolla.jni;
 
 public class InfoNative {
-    public static final int MODULE_CAMERA1 = 0;
-    public static final int MODULE_CAMERA2 = 1;
+
+    public static final int MODULE_KEYPAD = 0;
+    public static final int MODULE_TOUCH = 1;
     public static final int MODULE_DISPLAY = 2;
-    public static final int MODULE_KEYPAD = 3;
-    public static final int MODULE_MEMORY = 4;
-    public static final int MODULE_SCANNER = 5;
-    public static final int MODULE_TOUCH = 6;
-    public static final int MODULE_NFC = 7;
-    public static final int MODULE_IFM = 8;
-    public static final int MODULE_SEM = 9;
-    public static final int MODULE_BLUETOOTH = 10;
-    public static final int MODULE_GPS = 11;
-    public static final int MODULE_PHONE = 12;
-    public static final int MODULE_WLAN = 13;
-    public static final int MODULE_ACCELERATION = 14;
-    public static final int MODULE_LIGHT = 15;
-    public static final int MODULE_PROXIMITY = 16;
-    public static final int MODULE_TEMPERATURE = 17;
-    public static final int MODULE_GYROSCOPE = 18;
-    public static final int MODULE_MAGNETIC = 19;
-    public static final int MODULE_PRESURE = 20;
-    public static final int MODULE_END = 21;
+    public static final int MODULE_BLUETOOTH = 3;
+    public static final int MODULE_WLAN = 4;
+    public static final int MODULE_PHONE = 5;
+    public static final int MODULE_GPS = 6;
+    public static final int MODULE_MEMORY = 7;
+    public static final int MODULE_CAMERA1 = 8;
+    public static final int MODULE_SCANNER = 9;
+    public static final int MODULE_NFC = 10;
+    public static final int MODULE_ACCELERATION = 11;
+    public static final int MODULE_LIGHT = 12;
+    public static final int MODULE_TEMPERATURE = 13;
+    public static final int MODULE_GYROSCOPE = 14;
+    public static final int MODULE_MAGNETIC = 15;
+    public static final int MODULE_PRESURE = 16;
+    public static final int MODULE_PROXIMITY = 17;
+    public static final int MODULE_SAM = 18;
+    public static final int MODULE_RFID = 19;
+    public static final int MODULE_CAMERA2 = 20;
+    public static final int MODULE_MSR = 21;
+    public static final int MODULE_PRINTER = 22;
+	public static final int MODULE_FISCAL = 23;
+	public static final int MODULE_FINGERPRINTER = 24;
+	public static final int MODULE_ICR = 25;
+    public static final int MODULE_END = 26;
 
     static { System.loadLibrary("infonative_jni"); }
 

@@ -1,4 +1,9 @@
-import com.amolla.sdk.card;
+/*
+ * Copyright (C) 2019 by J.J. (make.exe@gmail.com)
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ */
+
+import com.amolla.sdk.port;
 
 import com.amolla.sdk.Tube;
 import com.amolla.sdk.ErroNo;
@@ -54,7 +59,7 @@ public class UartPort {
         Bundle param = new Bundle();
         param.putInt(To.P0, baudrate);
         param.putInt(To.P1, flags);
-        param.putInt(To.P2, hwflow);
+        param.putBoolean(To.P2, hwflow);
         int result = Tube.doAction("PORT_UART" + Tube.STR_TOKEN + path, "PORT_UART_OPEN", param);
         if (ErroNo.check(result)) {
             mAbsolutePath = path;
@@ -111,7 +116,9 @@ public class UartPort {
         param.putInt(To.P0, mFileDescription);
         param.putByteArray(To.P1, buf);
         param.putInt(To.P2, len);
-        return Tube.getInt("PORT_UART" + Tube.STR_TOKEN + mAbsolutePath, "PORT_UART_READ", param);
+        Bundle result = Tube.getValue("PORT_UART" + Tube.STR_TOKEN + mAbsolutePath, "PORT_UART_READ", param);
+        if (result == null) return ErroNo.FAILURE.code();
+        return result.getInt(To.R0);
     }
 
     /**

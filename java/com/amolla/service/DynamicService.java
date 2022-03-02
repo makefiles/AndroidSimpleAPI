@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2019 by J.J. (make.exe@gmail.com)
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ */
+
 package com.amolla.service;
 
 import com.amolla.sdk.Tube;
@@ -19,6 +24,7 @@ import android.os.IBinder;
 import android.util.Log;
 
 import java.io.File;
+import java.util.HashMap;
 
 @SuppressWarnings("unchecked")
 public class DynamicService extends Service {
@@ -40,11 +46,12 @@ public class DynamicService extends Service {
 
     @Override
     public IBinder onBind(Intent intent) {
-        return getService(intent.getString(To.P0), this);
+        return getService(intent.getStringExtra(To.P0), this);
     }
 
     private static boolean bindService(final String name) {
-        Intent intent = new Intent(DynamicService.class.getPackage().getName().trim(), DynamicService.class.getName().trim());
+        Intent intent = new Intent();
+        intent.setClassName(DynamicService.class.getPackage().getName().trim(), DynamicService.class.getName().trim());
         intent.putExtra(To.P0, name);
         if (AppGlobals.getInitialApplication().bindService(intent,
                 new ServiceConnection() {
@@ -53,7 +60,7 @@ public class DynamicService extends Service {
                         Log.i(TAG, "Connected " + componentName);
                         try {
                             ServiceManager.addService(name, iBinder);
-                            Tube.getService(name).startService();
+                            Log.d(TAG, "ServiceManager added " + name);
                         } catch (Exception e) { e.printStackTrace(); }
                     }
 
@@ -72,6 +79,7 @@ public class DynamicService extends Service {
         if (context == null) return bindService(name);
         try {
             ServiceManager.addService(name, getService(name, context));
+            Log.d(TAG, "ServiceManager added " + name);
             return true;
         } catch (Exception e) {
             if (DEBUG) { e.printStackTrace(); }
@@ -81,36 +89,32 @@ public class DynamicService extends Service {
     }
 
     public static boolean startService(final String ports, String name, Context context) {
-        return startService(ports, false, name, context);
-    }
-
-    public static boolean startService(final String ports, boolean many, String name, Context context) {
         boolean result = true;
         if (TextUtils.isEmpty(ports)) {
             if (DEBUG) Log.d(TAG, name + " service is skipped because the port is not set");
             return result;
         }
+        final boolean hasToken = name.contains(Tube.STR_TOKEN);
         final String[] path = ports.split(",");
         for (int i = 0; i < path.length; i++) {
             File file = new File(path[i]);
             if (file == null || !file.exists()) {
                 if (DEBUG) Log.d(TAG, name + " service is skipped because the path is invalid");
-                if (!many) return result;
+                if (hasToken) return result;
                 continue;
             }
-            if (many) name += Tube.STR_TOKEN + path[i];
-            if (!startService(name, context)) {
+            if (!startService((hasToken ? name : name + Tube.STR_TOKEN + path[i]), context)) {
                 result = false;
             }
-            if (!many) break;
+            if (hasToken) break;
         }
         return result;
     }
 
-    public static boolean startAll(Map<String, String> map, Context context) {
+    public static boolean startAll(HashMap<String, String> map, Context context) {
         boolean result = true;
         for (Tube.DEFAULT_SERVICE service : Tube.DEFAULT_SERVICE.values()) {
-            if (!startService(service.name() + Tube.STR_TOKEN + Tube.STR_SERVICE_SUFFIX, context)) {
+            if (!startService(service.name() + Tube.STR_SERVICE_SUFFIX, context)) {
                 result = false;
             }
         }
@@ -121,7 +125,7 @@ public class DynamicService extends Service {
         for (Tube.RUNTIME_SERVICE service : Tube.RUNTIME_SERVICE.values()) {
             switch (service) {
                 case PORT_UART:
-                    if (!startService(map.get("FS_UART_PORT"), true, service.name(), context)) {
+                    if (!startService(map.get("SERIAL_UART_PORT"), service.name(), context)) {
                         result = false;
                     }
                     break;

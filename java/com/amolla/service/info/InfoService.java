@@ -1,9 +1,15 @@
+/*
+ * Copyright (C) 2019 by J.J. (make.exe@gmail.com)
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ */
+
 package com.amolla.service.info;
 
 import com.amolla.sdk.ITube;
 import com.amolla.sdk.ErroNo;
 import com.amolla.sdk.To;
 import com.amolla.service.DynamicReceiver;
+import com.amolla.service.DynamicController;
 import com.amolla.service.info.DeviceInformation;
 import com.amolla.service.info.ModuleInformation;
 
@@ -17,7 +23,6 @@ public class InfoService extends ITube.Stub {
     private static final String TAG = InfoService.class.getSimpleName();
     private static final boolean DEBUG = true;
 
-    private static DynamicController mCtrl;
     private static enum INFO_DEV {
         INFO_DEV_DEVICE_NAME,
         INFO_DEV_PROCESSOR,
@@ -36,27 +41,32 @@ public class InfoService extends ITube.Stub {
         INFO_DEV_ATTESTATION_KEY
     }
     private static enum INFO_TYPE {
-        INFO_TYPE_CAMERA1,
-        INFO_TYPE_CAMERA2,
-        INFO_TYPE_DISPLAY,
         INFO_TYPE_KEYPAD,
-        INFO_TYPE_MEMORY,
-        INFO_TYPE_SCANNER,
         INFO_TYPE_TOUCH,
-        INFO_TYPE_NFC,
-        INFO_TYPE_IFM,
-        INFO_TYPE_SEM,
+        INFO_TYPE_DISPLAY,
         INFO_TYPE_BLUETOOTH,
-        INFO_TYPE_GPS,
-        INFO_TYPE_PHONE,
         INFO_TYPE_WLAN,
+        INFO_TYPE_PHONE,
+        INFO_TYPE_GPS,
+        INFO_TYPE_MEMORY,
+        INFO_TYPE_CAMERA1,
+        INFO_TYPE_SCANNER,
+        INFO_TYPE_NFC,
         INFO_TYPE_ACCELERATION,
         INFO_TYPE_LIGHT,
-        INFO_TYPE_PROXIMITY,
         INFO_TYPE_TEMPERATURE,
         INFO_TYPE_GYROSCOPE,
         INFO_TYPE_MAGNETIC,
-        INFO_TYPE_PRESURE
+        INFO_TYPE_PRESURE,
+        INFO_TYPE_PROXIMITY,
+        INFO_TYPE_SAM,
+        INFO_TYPE_RFID,
+        INFO_TYPE_CAMERA2,
+        INFO_TYPE_MSR,
+        INFO_TYPE_PRINTER,
+        INFO_TYPE_FISCAL,
+        INFO_TYPE_FINGERPRINTER,
+        INFO_TYPE_ICR
     }
     private static enum INFO_MOD {
         INFO_MOD_SCANNER_CLASS,
@@ -81,39 +91,42 @@ public class InfoService extends ITube.Stub {
         INFO_MOD_BACK_BATT_VOLT
     }
 
+    private DynamicController mControl;
     public InfoService(Context context) {
-        mCtrl = new DynamicController(context, TAG);
-        mCtrl.setHandler(new Handler(mCtrl.getLooper()) {
+        mControl = new DynamicController(context, TAG);
+        mControl.setHandler(new Handler(mControl.getLooper()) {
             @Override
             public synchronized void handleMessage(Message msg) {
             }
         });
-        mCtrl.registerReceiver(new DynamicReceiver(this), DynamicReceiver.getFilter(INFO_DEV.class, INFO_TYPE.class, INFO_MOD.class));
-        DeviceInformation.init(mCtrl);
-        ModuleInformation.init(mCtrl);
+        mControl.registerReceiver(new DynamicReceiver(this), DynamicReceiver.getFilter(INFO_DEV.class, INFO_TYPE.class, INFO_MOD.class));
+        DeviceInformation.init(mControl);
+        ModuleInformation.init(mControl);
     }
 
     @Override
-    public synchronized int doAction(String key, Bundle val) {
+    public int doAction(String key, Bundle val) {
         return ErroNo.UNSUPPORTED.code();
     }
 
     @Override
-    public synchronized int setValue(String key, Bundle val) {
+    public int setValue(String key, Bundle val) {
         return ErroNo.UNSUPPORTED.code();
     }
 
     @Override
-    public synchronized Bundle getValue(String key, Bundle val) {
+    public Bundle getValue(String key, Bundle val) {
         Bundle result = new Bundle();
 
         if (key == null || key.isEmpty()) {
             result.putInt(To.R0, ErroNo.ILLEGAL_ARGUMENT.code());
+            if (DEBUG) Log.e(TAG, ErroNo.toString(result.getInt(To.R0)));
             return result;
         }
 
         if (val != null) {
             result.putInt(To.R0, ErroNo.UNSUPPORTED.code());
+            if (DEBUG) Log.e(TAG, key + " " + ErroNo.toString(result.getInt(To.R0)));
             return result;
         }
 
@@ -189,7 +202,7 @@ public class InfoService extends ITube.Stub {
                         result.putString(To.R0, ModuleInformation.get().getSecondCameraFirmwareVersion(false));
                         break;
                     case INFO_MOD_BT_MAC_ADDR:
-                        result.putString(To.R0, ModuleInformation.get().getBluetoothMacAddress(false));
+                        result.putString(To.R0, ModuleInformation.get().getBluetoothMacAddress(true));
                         break;
                     case INFO_MOD_WLAN_DRIVER_VER:
                         result.putString(To.R0, ModuleInformation.get().getWlanDriverVersion(false));
@@ -201,7 +214,7 @@ public class InfoService extends ITube.Stub {
                         result.putString(To.R0, ModuleInformation.get().getWlanConfigVersion(false));
                         break;
                     case INFO_MOD_WLAN_MAC_ADDR:
-                        result.putString(To.R0, ModuleInformation.get().getWlanMacAddress(false));
+                        result.putString(To.R0, ModuleInformation.get().getWlanMacAddress(true));
                         break;
                     case INFO_MOD_WLAN_IP_ADDR:
                         result.putString(To.R0, ModuleInformation.get().getWlanIpAddress(true));
@@ -245,6 +258,7 @@ public class InfoService extends ITube.Stub {
             Log.e(TAG, "Not implemented getValue( " + key + " )");
         }
 
+        if (DEBUG) Log.d(TAG, key + " " + result);
         return result;
     }
 }

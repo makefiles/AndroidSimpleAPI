@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2019 by J.J. (make.exe@gmail.com)
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ */
+
 package com.amolla.service;
 
 import static com.amolla.sdk.Tube.STR_EXE_ACTION_PREFIX;
@@ -6,6 +11,7 @@ import static com.amolla.sdk.Tube.STR_GET_ACTION_PREFIX;
 import com.amolla.sdk.ITube;
 import com.amolla.sdk.To;
 
+import com.android.internal.annotations.GuardedBy;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -18,10 +24,10 @@ public class DynamicReceiver extends BroadcastReceiver {
     public static final String TAG = DynamicReceiver.class.getSimpleName();
     public static final boolean DEBUG = true;
 
-    public static <T extends Enum<T>> IntentFilter getFilter(Class<T>... enumerations) {
+    public static <T extends Enum<T>> IntentFilter getFilter(Class<?>... enumerations) {
         IntentFilter filter = new IntentFilter();
-        for (Class<T> cls : enumerations) {
-            addAction(filter, cls);
+        for (Class<?> cls : enumerations) {
+            addAction(filter, (Class<T>) cls);
         }
         return filter;
     }
@@ -31,7 +37,7 @@ public class DynamicReceiver extends BroadcastReceiver {
             return false;
         }
         for (T enumValue : enumeration.getEnumConstants()) {
-            if (DEBUG) { Log.d(TAG, "Add filter : " + enumValue.name());
+            if (DEBUG) { Log.d(TAG, "Add filter : " + enumValue.name()); };
             filter.addAction(STR_EXE_ACTION_PREFIX + enumValue.name());
             filter.addAction(STR_SET_ACTION_PREFIX + enumValue.name());
             filter.addAction(STR_GET_ACTION_PREFIX + enumValue.name());
@@ -55,7 +61,8 @@ public class DynamicReceiver extends BroadcastReceiver {
                 intent.replaceExtras((Bundle) null);
                 if (intent.hasExtra(key)) {
                     Intent result = new Intent();
-                    result.putInt(To.R0, mStub.doAction(key, param));
+                    result.putExtra(To.R0, action);
+                    result.putExtra(To.R1, mStub.doAction(key, param));
                     IntentSender sender = (IntentSender) intent.getParcelableExtra(key);
                     try { sender.sendIntent(context, 0, result, null, null);
                     } catch (IntentSender.SendIntentException ignored) {}
@@ -68,7 +75,8 @@ public class DynamicReceiver extends BroadcastReceiver {
                 intent.replaceExtras((Bundle) null);
                 if (intent.hasExtra(key)) {
                     Intent result = new Intent();
-                    result.putInt(To.R0, mStub.setValue(key, param));
+                    result.putExtra(To.R0, action);
+                    result.putExtra(To.R1, mStub.setValue(key, param));
                     IntentSender sender = (IntentSender) intent.getParcelableExtra(key);
                     try { sender.sendIntent(context, 0, result, null, null);
                     } catch (IntentSender.SendIntentException ignored) {}
@@ -81,7 +89,8 @@ public class DynamicReceiver extends BroadcastReceiver {
                 intent.replaceExtras((Bundle) null);
                 if (intent.hasExtra(key)) {
                     Intent result = new Intent();
-                    result.putExtras(To.R0, mStub.getValue(key, param));
+                    result.putExtra(To.R0, action);
+                    result.putExtra(To.R1, mStub.getValue(key, param));
                     IntentSender sender = (IntentSender) intent.getParcelableExtra(key);
                     try { sender.sendIntent(context, 0, result, null, null);
                     } catch (IntentSender.SendIntentException ignored) {}
