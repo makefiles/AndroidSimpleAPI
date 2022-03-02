@@ -1,18 +1,28 @@
 ## AndroidSimpleAPI
 `이 소스코드는 온전히 단독 빌드되는 형태가 아니어서 AOSP 수정에 익숙하신 분들에게만 도움이 되리라 생각합니다.`
 
-`전체 개념 설명을 위주로 문서를 작성하였으며, Android.mk, Android.bp 를 포함시키면 얼마든지 동작 가능한 소스이지만 참고용 코드 의미임을 밝힙니다.`
+`전체 개념 설명을 위주로 문서를 작성하였으며, Android.mk, Android.bp 를 포함시키면`
+
+`얼마든지 동작 가능한 소스이지만 참고용 코드 의미임을 밝힙니다.`
 
 <br />
 
 ### Needs
-`Android 서비스/매니저 구조로 Custom API를 작성했을 경우 시나리오가 변경되면 API가 추가되거나 변경이 빈번히 발생 할 수 있습니다.`
+`Android 서비스/매니저 구조로 Custom API를 작성했을 경우`
 
-`이는 기존에 배포된 API를 사용하는 3rd party 앱에서는 호환성 유지를 위해서는 신규 배포된 API를 기반으로 재빌드해야 하는 문제점이 있습니다.`
+`시나리오가 변경되면 API가 추가되거나 변경이 빈번히 발생 할 수 있습니다.`
 
-`이는 AOSP SDK 버전이 올라감에 따라서 각 앱들도 구현을 달리해야하는 것과 같이 Custom API를 사용하는 앱도 마찬가지의 작업이 필요합니다.`
+`이는 기존에 배포된 API를 사용하는 3rd party 앱에서는 호환성 유지를 위해서`
 
-`또, AIDL로 인하여 메소드의 순서가 바뀌었을 경우에는 Index로 인해 기존 API를 Call 할 경우에 Crash가 발생하는 등의 치명적인 문제를 내포합니다.`
+`신규 배포된 API를 기반으로 재빌드해야 하는 문제점이 있습니다.`
+
+`이는 AOSP SDK 버전이 올라감에 따라서 각 앱들도 구현을 달리해야하는 것과 같이`
+
+`Custom API를 사용하는 앱도 마찬가지의 작업이 필요합니다.`
+
+`또, AIDL로 인하여 메소드의 순서가 바뀌었을 경우에는 Index로 인해`
+
+`기존 API를 Call 할 경우에 Crash가 발생하는 등의 치명적인 문제를 내포합니다.`
 
 `따라서 사용 앱과 단말기 안의 서비스간의 Dependency를 줄이기 위한 요구사항이 발생합니다.`
 
@@ -48,19 +58,25 @@
 #### Description
 `이 모든 API 호출의 핵심은 Key라는 문자열을 이용합니다.`
 
-`시스템에서 직접 실행되는 StaticServer 이름이 “STATIC_SERVER”로 등록되어서 언제 어디서든 호출 가능한 서비스로 동작하며,`
+`시스템에서 직접 실행되는 StaticServer 이름이 “STATIC_SERVER”로 등록되어서 어디서든 호출 가능한 서비스로 동작하며,`
 
 `StaticServer 는 DynamicService 를 이용해 각기 다른 용도의 Service 들을 실행합니다.`
 
 `실행과정에서 각기 다른 용도의 Service들은 그들만의 고유 이름으로 서비스를 등록을 합니다.`
 
-`호출 가능한 API들은 Enum 문자열들로 서비스 내에 구현되어 있으며, 이는 API 호출시 Method를 찾기위한 키워드로 사용됩니다.`
+`호출 가능한 API들은 Enum 문자열들로 서비스 내에 구현되어 있으며,`
+
+`이는 API 호출시 Method를 찾기위한 키워드로 사용됩니다.`
 
 `마찬가지로 Enum 문자열들은 Intent API방법을 쓸때에도 활용합니다.`
 
-`API 호출시 전달되는 “PORT_UART_OPEN” 문자열을 Tube 클래스에서, 앞 문자열 “PORT_UART” 이름으로 서비스를 찾습니다.`
+`API 호출시 전달되는 “PORT_UART_OPEN” 문자열을 Tube 클래스에서,`
 
-`목표 서비스인 UartService 는 수신된 키워드를 가지고 분기하여 원하는 Method를 호출한 후 처리된 결과를 Bundle에 담아 결과를 리턴합니다.`
+`앞 문자열 “PORT_UART” 이름으로 서비스를 찾습니다.`
+
+`목표 서비스인 UartService 는 수신된 키워드를 가지고 분기하여`
+
+`원하는 Method를 호출한 후 처리된 결과를 Bundle에 담아 결과를 리턴합니다.`
 
 `이로써 AIDL 의 Index 문제를 일으키지 않고 자유롭게 API 를 추가 삭제 변경 할 수 있게됩니다.`
 
@@ -111,7 +127,9 @@ Log.e(TAG, “Serializable: ” + result.getSerializable(To.R5));
 
 `AOSP의 BaseBundle.java, Bundle.java에 구현되어 있는 Method들로 모든 데이터 형에 대해 RPC가 가능합니다.`
 
-`기본형, 배열에 대해서는 AOSP에 API가 있으며, 사용자 정의 클래스들은 Parcelable, Serializable을 구현하여 전달 가능합니다.`
+`기본형, 배열에 대해서는 AOSP에 API가 있으며, 사용자 정의 클래스들은`
+
+`Parcelable, Serializable을 구현하여 전달 가능합니다.`
 
 `AIDL로 구현된 Callback은 Object 형태의 IBinder로 RPC가 가능한 것을 확인했습니다.`
 
@@ -273,7 +291,9 @@ Log.e(TAG, “Result: “ + intent);
 #### com.amolla.server.jar
 `① BUILDIN_SDK_VERSION과 HashMap<String, String>으로 KERNEL_INTERFACE_MAP을 정의합니다.`
 
-`이는 전체 서비스에서 사용되는 Configuration으로 여러 빌드 모델들의 설정을 달리 하기 위한 Build-Time에 결정하는 값입니다.`
+`이는 전체 서비스에서 사용되는 Configuration으로 여러 빌드 모델들의`
+
+`설정을 달리 하기 위한 Build-Time에 결정하는 값입니다.`
 
 `Branding 또는 Support 여부를 여기서 확인해 분기 될 수 있도록 정의합니다.`
 
