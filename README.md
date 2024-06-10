@@ -91,6 +91,7 @@ async.setReceiver(new BroadcastReceiver() {
         Log.e(TAG, “Result: “ + intent);
     }
 });
+async.sendBroadcast(“UTIL_TEST_PARAM”, null);
 
 // 동기식 API 호출
 Sender sync = new Sender(this);
